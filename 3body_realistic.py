@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 # Orbital element
 
@@ -8,17 +9,13 @@ def kep2cart(a, e, i, w, W, t, M0, t0):
     M = M0 + n * (t - t0)
     # Newton
     E = M
-    while E - e * np.sin(E) - M > 0.01:
+    # for i in range(5):
+    while E - e * np.sin(E) - M > 1e-20:
         E = E - (E - e * np.sin(E) - M) / (1 - e * np.cos(E))
-
     # On ne calcule pas l'anomalie vraie ?
-
-    r = a * (1 - e * np.cos(E))
 
     X = a * (np.cos(E) - e)
     Y = a * np.sqrt(1 - np.power(e, 2)) * np.sin(E)
-    X_d = - (n * np.power(a, 2) * np.sin(E)) / r
-    Y_d = (n * np.power(a, 2) * np.sqrt(1 - np.power(e, 2)) * np.cos(E)) / r
 
 
     # Define rotation matrix
@@ -26,7 +23,7 @@ def kep2cart(a, e, i, w, W, t, M0, t0):
     R1i = create_rot1(-i)
     R3w = create_rot3(-w)
 
-    return R3W @ R1i @ R3w @ np.array([[X, Y, 0]]).T, R3W @ R1i @ R3w @ np.array([[X_d, Y_d, 0]]).T
+    return R3W @ R1i @ R3w @ np.array([[X, Y, 0]]).T
 
 
 def create_rot1(t):
@@ -46,7 +43,7 @@ def rk4(y, t, step, f):
     return y + step * (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
 
-def integrate(y, t):
+def derivate(y, t):
     return np.hstack((y[3:6], compute_gravity_3body(y[0:3], t)))
 
 
@@ -85,19 +82,18 @@ WJ = 100.5145 * np.pi / 180
 wJ = 273.8752 * np.pi / 180
 M0J = 80.0392 * np.pi / 180
 T0J = 2456600.5
-# Tj = 2 * np.pi * np.sqrt(np.power(aJ, 3) / G)
+Tj = 2 * np.pi * np.sqrt(np.power(aJ, 3) / G)
 #
 # wtJ = 2 * np.pi / Tj
 
-### Asteroid 2007 VW266
+a = 3.27
 mA = 0
-aA = 5.454
-eA = 0.3896
-iA = 108.358 * np.pi / 180
-wA = 226.107 * np.pi / 180
-WA = 276.509
-M0A = 146.88
-T0A = T0J
+
+v = np.array([a, 0, 0, 0, k / np.sqrt(a), 0])
+
+uJ = kep2cart(aJ, eJ, iJ, wJ, WJ, 0, M0J, 0)
+print(uJ)
+# -0.89, 5.09, -1.06, -7.5e-3, -9.5e-4, 1.72e-4
 
 
 traj = plt.figure(1).add_subplot(111)
@@ -107,16 +103,14 @@ inc = plt.figure(4).add_subplot(111)
 traj.scatter(0, 0, c='r')
 traj.axis("equal")
 
-number_it = 365 * 100
+number_it = 365 * 50
 step = 1
-v = kep2cart(aA, eA, iA, wA, WA, 0, M0A, T0A)[:, 0]
-print(v)
 traj.scatter(v[0], v[1], c='C0', s=0.1)
-for i in range(number_it):
-    v = rk4(v, i * step, step, integrate)
+for i in tqdm(range(number_it)):
+    v = rk4(v, i * step, step, derivate)
     if i % 20 == 0:
         traj.scatter(v[0], v[1], c='C0', s=0.1)
-        uJ = kep2cart(aJ, eJ, iJ, wJ, WJ, i * step, M0J, T0J)
+        uJ = kep2cart(aJ, eJ, iJ, wJ, WJ, i * step, M0J, 0)
         traj.scatter(uJ[0], uJ[1], c='C1', s=0.3)
         a = compute_semi_major_axis(v)
         e = compute_eccentricity(v)
@@ -124,5 +118,4 @@ for i in range(number_it):
         sma.scatter(i * step / 365, a, c='C1', s=0.1)
         ecc.scatter(i * step / 365, e, c='C2', s=0.1)
         inc.scatter(i * step / 365, incl, c='C3', s=0.1)
-
 plt.show()

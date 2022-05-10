@@ -2,6 +2,15 @@
 
 #include "Body.h"
 
+/**
+ * Runge Kutta method to solve the differential equation
+ * @tparam Derivator
+ * @param b Body
+ * @param time
+ * @param step
+ * @param f function used for the derivation (compute gravity on the body)
+ * @return body at time t+1
+ */
 template <typename Derivator>
 constexpr
 Body runge_kutta4(Body const& b, double time, double step, Derivator f) {

@@ -3,6 +3,14 @@
 #include "Body.h"
 #include "SpaceMechanics.h"
 
+
+/**
+ * Compute the gravity of 3 bodies
+ * @param b body on which the gravity is computed (in our case the asteroid)
+ * @param time at which the computation takes time (important for the
+ * coordinates of Jupiter)
+ * @return the acceleration of the body
+ */
 constexpr
 vec3 compute_gravity_3body(Body b, double time) {
     // TODO: Enable n-body simulation
@@ -19,6 +27,12 @@ vec3 compute_gravity_3body(Body b, double time) {
     return solar_perturbation + jupiter_perturbation;
 }
 
+/**
+ * Derivate the state vector
+ * @param b
+ * @param time
+ * @return derivative of a body
+ */
 constexpr
 Body derivate(Body const &b, double time) {
     return {b.speed, compute_gravity_3body(b, time)};

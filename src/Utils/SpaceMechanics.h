@@ -2,6 +2,11 @@
 
 #include "Body.h"
 
+/**
+ * Compute the semi-major axis of the given body.
+ * @param b
+ * @return
+ */
 constexpr
 double compute_semi_major_axis(Body b) {
     auto const distance = norm(b.position);
@@ -10,6 +15,11 @@ double compute_semi_major_axis(Body b) {
     return 1. / (2. / distance - squared_speed / mu_s);
 }
 
+/**
+ * Compute the eccentricity of the given body
+ * @param b
+ * @return
+ */
 constexpr
 double compute_eccentricity(Body b) {
     auto const tmp1 = glm::cross(b.speed, glm::cross(b.position, b.speed)) / mu_s;
@@ -17,21 +27,39 @@ double compute_eccentricity(Body b) {
 
     return norm(tmp1 - tmp2);
 }
-
+/**
+ * Compute the inclination of the given body
+ * @param b
+ * @return
+ */
 constexpr
 double compute_inclination(Body b) {
     auto const tmp = glm::cross(b.position, b.speed) / (norm(b.position) * norm(b.speed));
     return gcem::acos(tmp.z);
 }
-
+/**
+ * Convert the keplerian elements to cartesian
+ * @param semi_major
+ * @param eccentricity
+ * @param inclination
+ * @param omega
+ * @param Omega
+ * @param time
+ * @param M0
+ * @param initial_time
+ * @return Body (with keplerian position and velocity)
+ */
 constexpr
 Body kep2cart(double semi_major, double eccentricity, double inclination, double omega,
               double Omega, double time, double M0, double initial_time) {
 
+    // Mean motion
     auto const n = k / gcem::pow(semi_major, 1.5);
+
+    // Mean anomaly
     auto const M = M0 + n * (time - initial_time);
 
-    // Newton
+    // Newton to determine Eccentric Anomaly
     auto const E = [=]() {
         auto tmp = M;
         while (gcem::abs(tmp - eccentricity * gcem::sin(tmp) - M) > 1e-8)

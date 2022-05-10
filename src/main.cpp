@@ -8,12 +8,24 @@
 #include "Utils/Integrators.h"
 #include "Utils/SpaceMechanics.h"
 
+/**
+ * Write to file
+ * @param filename
+ * @param container1
+ * @param container2
+ */
 static void dump_file(std::string const& filename, std::vector<vec3> const& container1, std::vector<vec3> const& container2) {
     std::ofstream s{filename};
     for (unsigned i{}; i < std::size(container1); ++i)
         s << container1[i].x << ' ' << container1[i].y << ' ' << container1[i].z << ' ' << container2[i].x << ' ' << container2[i].y << ' ' << container2[i].z << '\n';
 }
 
+/**
+ * Write to file
+ * @param filename
+ * @param container
+ * @param sample_rate_in_year
+ */
 static void dump_file(std::string const& filename, std::vector<double> const& container, auto sample_rate_in_year) {
     std::ofstream s{filename};
     for (unsigned i{}; i < std::size(container); ++i)
@@ -21,15 +33,23 @@ static void dump_file(std::string const& filename, std::vector<double> const& co
 }
 
 int main() {
+    // Time of simulation
     double constexpr final_time = 11.9 * year;
+    // Step
     double constexpr step = .5;
+    // Number of iteration
     unsigned constexpr iteration_nb = 1 + unsigned(final_time / step);
+    // Sample rate (at which we save the data)
     unsigned constexpr sample_rate = 26;
+    // Number of samples
     unsigned constexpr sample_nb = 1 + iteration_nb / sample_rate;
 
     double time = 0;
+
+    // Convert initial keplerian elements to cartesian
     Body VW_266 = kep2cart(aA, eA, iA, wA, WA, time, M0A, T0A);
 
+    // Create vectors in which data will be stored
     std::vector<double> semi_major_axis(sample_nb);
     std::vector<vec3> positions(sample_nb);
     std::vector<vec3> positions_jup(sample_nb);
@@ -38,8 +58,10 @@ int main() {
 
     std::cout << std::setprecision(2) << std::fixed;
     for (unsigned i = 0; i < iteration_nb; ++i) {
+        // Apply Runge-Kutta on the system
         VW_266 = runge_kutta4(VW_266, time, step, derivate);
 
+        // Store data
         if (i % sample_rate == 0) {
             auto const sample_index = i / sample_rate;
             positions[sample_index] = VW_266.position;
@@ -56,7 +78,7 @@ int main() {
     }
     std::cout << "\r100.00 %" << std::endl;
 
-
+    // Write data to file
     dump_file("position.txt", positions_jup, positions);
     dump_file("semi_major_axis.txt", semi_major_axis, double(sample_rate) * step / year);
     dump_file("eccentricity.txt", eccentricity, double(sample_rate) * step / year);

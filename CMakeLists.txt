@@ -36,3 +36,13 @@ link_directories(${gcem_LIBRARY_DIRS})
 set_property(TARGET Asteroids PROPERTY CXX_STANDARD 20)
 set_property(TARGET Asteroids PROPERTY CMAKE_CXX_STANDARD_REQUIRED ON)
 
+if (BUILD_DOC)
+    find_package(Doxygen REQUIRED dot)
+    include(CMakeDoxygen.txt)
+
+    doxygen_add_docs(Doxygen ALL
+            src README.md
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+            COMMENT "Generating API documentation with Doxygen"
+            )
+endif (BUILD_DOC)
